@@ -1,0 +1,29 @@
+[33mcommit fb9f0f3238e9c87fed8fa0bbf40e581d567ff4e3[m[33m ([m[1;36mHEAD[m[33m)[m
+Author: misha <mihailgavrilov118@gmail.com>
+Date:   Sat Dec 6 20:36:23 2025 +0800
+
+    diffrent windows for users with diffrent access level done
+
+[33mcommit 14dd16010d33ab5c7e5b93dad5cdcdc3321ed9ea[m
+Author: misha <mihailgavrilov118@gmail.com>
+Date:   Sat Dec 6 20:03:37 2025 +0800
+
+    added classes for out documents (that prepod asks) "vihodnyie documentyi"
+
+[33mcommit 72a400b3db29e20a947c87febe3775e2bdbdddd6[m[33m ([m[1;32mmaster[m[33m)[m
+Author: misha <mihailgavrilov118@gmail.com>
+Date:   Sat Dec 6 19:36:43 2025 +0800
+
+    created autettification window
+
+[33mcommit 7dee206f7bcb3b00a6e4f59eb93cd3939c9f1d8b[m
+Author: misha <mihailgavrilov118@gmail.com>
+Date:   Mon Dec 1 22:57:28 2025 +0800
+
+    2nd commit
+
+[33mcommit c876b89eac798d1da6fcf229ced5cce22ee8a081[m
+Author: misha <mihailgavrilov118@gmail.com>
+Date:   Mon Dec 1 22:39:46 2025 +0800
+
+    first commit

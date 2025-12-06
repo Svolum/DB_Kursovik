@@ -6,6 +6,13 @@ import model.entities.Organization;
 import model.entities.TypeDocument;
 
 import javax.swing.*;
+import com.toedter.calendar.JDateChooser;
+import java.util.Date;
+
+import javax.swing.SpinnerDateModel;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.SQLException;
@@ -208,7 +215,7 @@ public class DocumentView extends JFrame {
         private JTextField txtFAutor;
         private JTextField txtIAutor;
         private JTextField txtOAutor;
-        private JTextField txtYear;
+        JDateChooser txtYear;
         private JTextField txtPages;
         private JButton btnSave;
         private JButton btnCancel;
@@ -264,11 +271,44 @@ public class DocumentView extends JFrame {
             txtFAutor = new JTextField(20);
             txtIAutor = new JTextField(20);
             txtOAutor = new JTextField(20);
-            txtYear = new JTextField(20);
+            txtYear = new JDateChooser();
+
+            txtYear.setDateFormatString("yyyy"); // показывать только год
+            txtYear.setDate(new Date()); // установить текущую дату
+
+            // Можно ограничить выбор только годом
+            txtYear.getJCalendar().setMaxSelectableDate(new Date()); // только до текущей даты
+
             txtPages = new JTextField(20);
+
+            // Добавляем валидацию
+
+            // 1. Для числовых полей (только цифры)
+            setNumericFilter(txtArchiveNum);  // Архивный №
+//            setNumericFilter(txtYear);        // Год создания
+            setNumericFilter(txtPages);       // Количество страниц
+
+            // 2. Для буквенных полей (только буквы)
+            setLetterFilter(txtFAutor);       // Фамилия автора
+            setLetterFilter(txtIAutor);       // Имя автора
+            setLetterFilter(txtOAutor);       // Отчество автора
+
+            // 3. Для названия документа - можно оставить как есть или добавить фильтр
+            // txtName остается без фильтра для возможности ввода любых символов
 
             btnSave = new JButton("Сохранить");
             btnCancel = new JButton("Отмена");
+        }
+
+        // Добавьте эти методы в класс DocumentDialog:
+        private void setNumericFilter(JTextField field) {
+            ((javax.swing.text.AbstractDocument) field.getDocument())
+                    .setDocumentFilter(new NumericDocumentFilter());
+        }
+
+        private void setLetterFilter(JTextField field) {
+            ((javax.swing.text.AbstractDocument) field.getDocument())
+                    .setDocumentFilter(new LetterDocumentFilter());
         }
 
         private void layoutComponents() {
@@ -373,7 +413,12 @@ public class DocumentView extends JFrame {
             txtFAutor.setText(doc.getFAutor());
             txtIAutor.setText(doc.getIAutor());
             txtOAutor.setText(doc.getOAutor());
-            txtYear.setText(String.valueOf(doc.getYearCreation()));
+            // Устанавливаем дату из документа
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.YEAR, doc.getYearCreation());
+            calendar.set(Calendar.MONTH, Calendar.JANUARY);
+            calendar.set(Calendar.DAY_OF_MONTH, 1);
+            txtYear.setDate(calendar.getTime());
             txtPages.setText(String.valueOf(doc.getNumPages()));
         }
 
@@ -393,7 +438,10 @@ public class DocumentView extends JFrame {
                 String fAutor = txtFAutor.getText().trim();
                 String iAutor = txtIAutor.getText().trim();
                 String oAutor = txtOAutor.getText().trim();
-                int year = Integer.parseInt(txtYear.getText().trim());
+                Date selectedDate = txtYear.getDate();
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(selectedDate);
+                int year = calendar.get(Calendar.YEAR);
                 int pages = Integer.parseInt(txtPages.getText().trim());
 
                 if (name.isEmpty() || fAutor.isEmpty() || iAutor.isEmpty() || oAutor.isEmpty()) {

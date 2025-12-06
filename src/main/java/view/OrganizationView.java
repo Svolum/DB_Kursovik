@@ -21,7 +21,7 @@ public class OrganizationView extends JFrame {
     public OrganizationView() {
         controller = new OrganizationController();
         setTitle("Управление организациями");
-        setSize(800, 600);
+        setSize(1000, 600); // увеличили размер для дополнительных полей
         setLocationRelativeTo(null);
 
         initComponents();
@@ -36,7 +36,7 @@ public class OrganizationView extends JFrame {
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Запрещаем редактирование напрямую в таблице
+                return false;
             }
         };
         table = new JTable(tableModel);
@@ -73,7 +73,7 @@ public class OrganizationView extends JFrame {
     private void loadData() {
         try {
             List<Organization> organizations = controller.getAllOrganizations();
-            tableModel.setRowCount(0); // Очищаем таблицу
+            tableModel.setRowCount(0);
 
             for (Organization org : organizations) {
                 Object[] row = {
@@ -82,8 +82,8 @@ public class OrganizationView extends JFrame {
                         org.getIndexOrg(),
                         org.getCity(),
                         org.getAddress(),
-                        org.getNumPhone(),
-                        org.getFax(),
+                        formatPhoneForDisplay(org.getNumPhone()),
+                        formatPhoneForDisplay(org.getFax()),
                         org.getEmail()
                 };
                 tableModel.addRow(row);
@@ -94,11 +94,60 @@ public class OrganizationView extends JFrame {
         }
     }
 
+    private String formatPhoneForDisplay(String phone) {
+        if (phone == null || phone.trim().isEmpty()) return "";
+
+        // Убираем все нецифровые символы
+        String digits = phone.replaceAll("[^0-9]", "");
+
+        if (digits.length() == 10) {
+            // Формат: (123) 456-78-90
+            return "(" + digits.substring(0, 3) + ") " +
+                    digits.substring(3, 6) + "-" +
+                    digits.substring(6, 8) + "-" +
+                    digits.substring(8);
+        } else if (digits.length() == 11) {
+            // Формат: +7 (123) 456-78-90
+            return "+" + digits.charAt(0) + " (" + digits.substring(1, 4) + ") " +
+                    digits.substring(4, 7) + "-" +
+                    digits.substring(7, 9) + "-" +
+                    digits.substring(9);
+        }
+
+        return phone; // возвращаем как есть, если нестандартная длина
+    }
+
+    private String formatPhoneForStorage(String countryCode, String operatorCode,
+                                         String number1, String number2) {
+        StringBuilder sb = new StringBuilder();
+
+        if (!countryCode.isEmpty()) {
+            sb.append(countryCode);
+        }
+
+        if (!operatorCode.isEmpty()) {
+            if (!sb.isEmpty()) sb.append(" ");
+            sb.append("(").append(operatorCode).append(")");
+        }
+
+        if (!number1.isEmpty()) {
+            if (!sb.isEmpty()) sb.append(" ");
+            sb.append(number1);
+        }
+
+        if (!number2.isEmpty()) {
+            if (!sb.isEmpty()) sb.append("-");
+            sb.append(number2);
+        }
+
+        return sb.toString();
+    }
+
     private void showAddDialog() {
         OrganizationDialog dialog = new OrganizationDialog(this, null);
         dialog.setVisible(true);
         if (dialog.isSaved()) {
-            loadData(); // Обновляем таблицу
+            loadData();
         }
     }
 
@@ -159,8 +208,19 @@ public class OrganizationView extends JFrame {
         private JTextField txtIndex;
         private JTextField txtCity;
         private JTextField txtAddress;
-        private JTextField txtPhone;
-        private JTextField txtFax;
+
+        // Поля для телефона
+        private JTextField txtPhoneCountryCode;
+        private JTextField txtPhoneOperatorCode;
+        private JTextField txtPhoneNumber1;
+        private JTextField txtPhoneNumber2;
+
+        // Поля для факса
+        private JTextField txtFaxCountryCode;
+        private JTextField txtFaxOperatorCode;
+        private JTextField txtFaxNumber1;
+        private JTextField txtFaxNumber2;
+
         private JTextField txtEmail;
         private JButton btnSave;
         private JButton btnCancel;
@@ -170,7 +230,7 @@ public class OrganizationView extends JFrame {
         public OrganizationDialog(JFrame parent, Organization org) {
             super(parent, org == null ? "Добавить организацию" : "Редактировать организацию", true);
             this.organization = org;
-            setSize(400, 350);
+            setSize(500, 500); // увеличили размер для дополнительных полей
             setLocationRelativeTo(parent);
 
             initComponents();
@@ -183,64 +243,147 @@ public class OrganizationView extends JFrame {
         }
 
         private void initComponents() {
-            txtName = new JTextField(20);
-            txtIndex = new JTextField(20);
-            txtCity = new JTextField(20);
+            txtName = new JTextField(15);
+            txtIndex = new JTextField(6);
+            txtCity = new JTextField(15);
             txtAddress = new JTextField(20);
-            txtPhone = new JTextField(20);
-            txtFax = new JTextField(20);
+
+            // Поля для телефона
+            txtPhoneCountryCode = new JTextField(3);
+            txtPhoneOperatorCode = new JTextField(3);
+            txtPhoneNumber1 = new JTextField(3);
+            txtPhoneNumber2 = new JTextField(4);
+
+            // Поля для факса
+            txtFaxCountryCode = new JTextField(3);
+            txtFaxOperatorCode = new JTextField(3);
+            txtFaxNumber1 = new JTextField(3);
+            txtFaxNumber2 = new JTextField(4);
+
             txtEmail = new JTextField(20);
 
             btnSave = new JButton("Сохранить");
             btnCancel = new JButton("Отмена");
+
+            // Добавляем валидацию
+            setNumericFilter(txtIndex, 6); // индекс максимум 6 цифр
+            setPhoneFilters();
+        }
+
+        private void setNumericFilter(JTextField field, int maxLength) {
+            ((javax.swing.text.AbstractDocument) field.getDocument())
+                    .setDocumentFilter(new NumericDocumentFilter(maxLength));
+        }
+
+        private void setPhoneFilters() {
+            // Для кода страны
+            ((javax.swing.text.AbstractDocument) txtPhoneCountryCode.getDocument())
+                    .setDocumentFilter(new PhoneDocumentFilter());
+            ((javax.swing.text.AbstractDocument) txtFaxCountryCode.getDocument())
+                    .setDocumentFilter(new PhoneDocumentFilter());
+
+            // Для остальных телефонных полей - только цифры
+            setNumericFilter(txtPhoneOperatorCode, 3);
+            setNumericFilter(txtPhoneNumber1, 3);
+            setNumericFilter(txtPhoneNumber2, 4);
+
+            setNumericFilter(txtFaxOperatorCode, 3);
+            setNumericFilter(txtFaxNumber1, 3);
+            setNumericFilter(txtFaxNumber2, 4);
         }
 
         private void layoutComponents() {
             setLayout(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
-            gbc.insets = new Insets(5, 5, 5, 5);
+            gbc.insets = new Insets(3, 5, 3, 5);
             gbc.fill = GridBagConstraints.HORIZONTAL;
 
-            gbc.gridx = 0; gbc.gridy = 0;
-            add(new JLabel("Название:"), gbc);
+            int row = 0;
+
+            // Название
+            gbc.gridx = 0; gbc.gridy = row;
+            add(new JLabel("Название*:"), gbc);
             gbc.gridx = 1;
             add(txtName, gbc);
 
-            gbc.gridx = 0; gbc.gridy = 1;
-            add(new JLabel("Индекс:"), gbc);
+            // Индекс
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
+            add(new JLabel("Индекс*:"), gbc);
             gbc.gridx = 1;
             add(txtIndex, gbc);
 
-            gbc.gridx = 0; gbc.gridy = 2;
-            add(new JLabel("Город:"), gbc);
+            // Город
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
+            add(new JLabel("Город*:"), gbc);
             gbc.gridx = 1;
             add(txtCity, gbc);
 
-            gbc.gridx = 0; gbc.gridy = 3;
-            add(new JLabel("Адрес:"), gbc);
+            // Адрес
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
+            add(new JLabel("Адрес*:"), gbc);
             gbc.gridx = 1;
             add(txtAddress, gbc);
 
-            gbc.gridx = 0; gbc.gridy = 4;
-            add(new JLabel("Телефон:"), gbc);
-            gbc.gridx = 1;
-            add(txtPhone, gbc);
+            // Телефон с разделением
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
+            add(new JLabel("Телефон*:"), gbc);
 
-            gbc.gridx = 0; gbc.gridy = 5;
-            add(new JLabel("Факс:"), gbc);
-            gbc.gridx = 1;
-            add(txtFax, gbc);
+            JPanel phonePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+            phonePanel.add(new JLabel("+"));
+            phonePanel.add(txtPhoneCountryCode);
+            phonePanel.add(new JLabel(" ("));
+            phonePanel.add(txtPhoneOperatorCode);
+            phonePanel.add(new JLabel(") "));
+            phonePanel.add(txtPhoneNumber1);
+            phonePanel.add(new JLabel("-"));
+            phonePanel.add(txtPhoneNumber2);
 
-            gbc.gridx = 0; gbc.gridy = 6;
-            add(new JLabel("Email:"), gbc);
+            gbc.gridx = 1;
+            add(phonePanel, gbc);
+
+            // Факс с разделением
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
+            add(new JLabel("Факс*:"), gbc);
+
+            JPanel faxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+            faxPanel.add(new JLabel("+"));
+            faxPanel.add(txtFaxCountryCode);
+            faxPanel.add(new JLabel(" ("));
+            faxPanel.add(txtFaxOperatorCode);
+            faxPanel.add(new JLabel(") "));
+            faxPanel.add(txtFaxNumber1);
+            faxPanel.add(new JLabel("-"));
+            faxPanel.add(txtFaxNumber2);
+
+            gbc.gridx = 1;
+            add(faxPanel, gbc);
+
+            // Email
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
+            add(new JLabel("Email*:"), gbc);
             gbc.gridx = 1;
             add(txtEmail, gbc);
 
+            // Кнопки
             JPanel buttonPanel = new JPanel();
             buttonPanel.add(btnSave);
             buttonPanel.add(btnCancel);
 
-            gbc.gridx = 0; gbc.gridy = 7;
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
+            gbc.gridwidth = 2;
+            gbc.fill = GridBagConstraints.CENTER;
+            gbc.insets = new Insets(15, 5, 5, 5);
+            add(new JLabel("* - обязательные поля"), gbc);
+
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
             gbc.gridwidth = 2;
             gbc.fill = GridBagConstraints.CENTER;
             add(buttonPanel, gbc);
@@ -251,32 +394,86 @@ public class OrganizationView extends JFrame {
             btnCancel.addActionListener(e -> dispose());
         }
 
+        private void parsePhoneNumber(String phone,
+                                      JTextField countryCodeField,
+                                      JTextField operatorCodeField,
+                                      JTextField number1Field,
+                                      JTextField number2Field) {
+            if (phone == null || phone.trim().isEmpty()) return;
+
+            // Убираем все нецифровые символы
+            String digits = phone.replaceAll("[^0-9]", "");
+
+            if (digits.length() >= 10) {
+                // Формат: 1234567890 -> код страны (если есть), код оператора, номер
+                if (digits.length() == 10) {
+                    // Нет кода страны
+                    operatorCodeField.setText(digits.substring(0, 3));
+                    number1Field.setText(digits.substring(3, 6));
+                    number2Field.setText(digits.substring(6));
+                } else if (digits.length() == 11) {
+                    // Есть код страны
+                    countryCodeField.setText(digits.substring(0, 1));
+                    operatorCodeField.setText(digits.substring(1, 4));
+                    number1Field.setText(digits.substring(4, 7));
+                    number2Field.setText(digits.substring(7));
+                }
+            }
+        }
+
         private void loadData(Organization org) {
             txtName.setText(org.getNameOrg());
             txtIndex.setText(String.valueOf(org.getIndexOrg()));
             txtCity.setText(org.getCity());
             txtAddress.setText(org.getAddress());
-            txtPhone.setText(org.getNumPhone());
-            txtFax.setText(org.getFax());
             txtEmail.setText(org.getEmail());
+
+            // Парсим телефон
+            parsePhoneNumber(org.getNumPhone(),
+                    txtPhoneCountryCode, txtPhoneOperatorCode,
+                    txtPhoneNumber1, txtPhoneNumber2);
+
+            // Парсим факс
+            parsePhoneNumber(org.getFax(),
+                    txtFaxCountryCode, txtFaxOperatorCode,
+                    txtFaxNumber1, txtFaxNumber2);
         }
 
         private void save() {
             try {
+                // Проверка обязательных полей
+                if (txtName.getText().trim().isEmpty() ||
+                        txtIndex.getText().trim().isEmpty() ||
+                        txtCity.getText().trim().isEmpty() ||
+                        txtAddress.getText().trim().isEmpty() ||
+                        txtEmail.getText().trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Пожалуйста, заполните все обязательные поля (*)",
+                            "Ошибка", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 String name = txtName.getText().trim();
                 int index = Integer.parseInt(txtIndex.getText().trim());
                 String city = txtCity.getText().trim();
                 String address = txtAddress.getText().trim();
-                String phone = txtPhone.getText().trim();
-                String fax = txtFax.getText().trim();
                 String email = txtEmail.getText().trim();
 
-                if (name.isEmpty() || city.isEmpty() || address.isEmpty() ||
-                        phone.isEmpty() || fax.isEmpty() || email.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Все поля должны быть заполнены",
-                            "Ошибка", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+                // Формируем телефон
+                String phone = formatPhoneForStorage(
+                        txtPhoneCountryCode.getText().trim(),
+                        txtPhoneOperatorCode.getText().trim(),
+                        txtPhoneNumber1.getText().trim(),
+                        txtPhoneNumber2.getText().trim()
+                );
+
+                // Формируем факс
+                String fax = formatPhoneForStorage(
+                        txtFaxCountryCode.getText().trim(),
+                        txtFaxOperatorCode.getText().trim(),
+                        txtFaxNumber1.getText().trim(),
+                        txtFaxNumber2.getText().trim()
+                );
 
                 Organization org = new Organization(name, index, city, address, phone, fax, email);
 

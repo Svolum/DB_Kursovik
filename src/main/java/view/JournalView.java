@@ -4,13 +4,19 @@ import controller.*;
 import model.entities.Journal;
 import model.entities.Document;
 import model.entities.Department;
+import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 import java.awt.*;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Date;
+import java.util.Calendar;
 
 public class JournalView extends JFrame {
     private JournalController controller;
@@ -193,8 +199,8 @@ public class JournalView extends JFrame {
         private JTextField txtFEmployee;
         private JTextField txtIEmployee;
         private JTextField txtOEmployee;
-        private JTextField txtDateIssue;
-        private JTextField txtDateReturn;
+        private JDateChooser dateChooserIssue; // для даты выдачи
+        private JDateChooser dateChooserReturn; // для даты возврата
         private JButton btnSave;
         private JButton btnCancel;
         private boolean saved = false;
@@ -203,7 +209,7 @@ public class JournalView extends JFrame {
         public JournalDialog(JFrame parent, Journal journal) {
             super(parent, journal == null ? "Добавить запись в журнал" : "Редактировать запись в журнале", true);
             this.journal = journal;
-            setSize(400, 350);
+            setSize(500, 500); // увеличили размер для календарей
             setLocationRelativeTo(parent);
 
             initComponents();
@@ -222,77 +228,164 @@ public class JournalView extends JFrame {
         }
 
         private void initComponents() {
-            txtDocId = new JTextField(20);
-            txtNumRecord = new JTextField(20);
-            txtDepId = new JTextField(20);
+            txtDocId = new JTextField(10);
+            txtNumRecord = new JTextField(10);
+            txtDepId = new JTextField(10);
             txtFEmployee = new JTextField(20);
             txtIEmployee = new JTextField(20);
             txtOEmployee = new JTextField(20);
-            txtDateIssue = new JTextField(20);
-            txtDateReturn = new JTextField(20);
+
+            // JDateChooser для дат
+            dateChooserIssue = new JDateChooser();
+            dateChooserIssue.setDateFormatString("dd.MM.yyyy");
+            dateChooserIssue.setDate(new Date());
+
+            dateChooserReturn = new JDateChooser();
+            dateChooserReturn.setDateFormatString("dd.MM.yyyy");
+            dateChooserReturn.setDate(new Date());
 
             btnSave = new JButton("Сохранить");
             btnCancel = new JButton("Отмена");
+
+            // Добавляем валидацию
+            setNumericFilters(); // для числовых полей
+            setLetterFilters();  // для полей ФИО
+        }
+
+        private void setNumericFilters() {
+            // ID документа, номер записи, ID отдела - только числа
+            setNumericFilter(txtDocId);
+            setNumericFilter(txtNumRecord);
+            setNumericFilter(txtDepId);
+        }
+
+        private void setNumericFilter(JTextField field) {
+            ((javax.swing.text.AbstractDocument) field.getDocument())
+                    .setDocumentFilter(new DocumentFilter() {
+                        @Override
+                        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                                throws BadLocationException {
+                            if (string == null) return;
+                            if (string.matches("[0-9]*")) {
+                                super.insertString(fb, offset, string, attr);
+                            }
+                        }
+
+                        @Override
+                        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                                throws BadLocationException {
+                            if (text == null) return;
+                            if (text.matches("[0-9]*")) {
+                                super.replace(fb, offset, length, text, attrs);
+                            }
+                        }
+                    });
+        }
+
+        private void setLetterFilters() {
+            // Для полей ФИО - только буквы (латиница и кириллица), пробелы и дефисы
+            setLetterFilter(txtFEmployee);
+            setLetterFilter(txtIEmployee);
+            setLetterFilter(txtOEmployee);
+        }
+
+        private void setLetterFilter(JTextField field) {
+            ((javax.swing.text.AbstractDocument) field.getDocument())
+                    .setDocumentFilter(new DocumentFilter() {
+                        @Override
+                        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr)
+                                throws BadLocationException {
+                            if (string == null) return;
+                            if (string.matches("[a-zA-Zа-яА-Я\\s\\-]*")) {
+                                super.insertString(fb, offset, string, attr);
+                            }
+                        }
+
+                        @Override
+                        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                                throws BadLocationException {
+                            if (text == null) return;
+                            if (text.matches("[a-zA-Zа-яА-Я\\s\\-]*")) {
+                                super.replace(fb, offset, length, text, attrs);
+                            }
+                        }
+                    });
         }
 
         private void layoutComponents() {
             setLayout(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
-            gbc.insets = new Insets(5, 5, 5, 5);
+            gbc.insets = new Insets(4, 5, 4, 5);
             gbc.fill = GridBagConstraints.HORIZONTAL;
 
             int row = 0;
 
+            // ID Документа
             gbc.gridx = 0; gbc.gridy = row;
-            add(new JLabel("ID Документа:"), gbc);
+            add(new JLabel("ID Документа*:"), gbc);
             gbc.gridx = 1;
             add(txtDocId, gbc);
 
+            // Номер записи
             row++;
             gbc.gridx = 0; gbc.gridy = row;
-            add(new JLabel("Номер записи:"), gbc);
+            add(new JLabel("Номер записи*:"), gbc);
             gbc.gridx = 1;
             add(txtNumRecord, gbc);
 
+            // ID Отдела
             row++;
             gbc.gridx = 0; gbc.gridy = row;
-            add(new JLabel("ID Отдела:"), gbc);
+            add(new JLabel("ID Отдела*:"), gbc);
             gbc.gridx = 1;
             add(txtDepId, gbc);
 
+            // Фамилия сотрудника
             row++;
             gbc.gridx = 0; gbc.gridy = row;
-            add(new JLabel("Сотрудник (Фамилия):"), gbc);
+            add(new JLabel("Сотрудник (Фамилия)*:"), gbc);
             gbc.gridx = 1;
             add(txtFEmployee, gbc);
 
+            // Имя сотрудника
             row++;
             gbc.gridx = 0; gbc.gridy = row;
-            add(new JLabel("Сотрудник (Имя):"), gbc);
+            add(new JLabel("Сотрудник (Имя)*:"), gbc);
             gbc.gridx = 1;
             add(txtIEmployee, gbc);
 
+            // Отчество сотрудника
             row++;
             gbc.gridx = 0; gbc.gridy = row;
-            add(new JLabel("Сотрудник (Отчество):"), gbc);
+            add(new JLabel("Сотрудник (Отчество)*:"), gbc);
             gbc.gridx = 1;
             add(txtOEmployee, gbc);
 
+            // Дата выдачи
             row++;
             gbc.gridx = 0; gbc.gridy = row;
-            add(new JLabel("Дата выдачи (ГГГГ-ММ-ДД):"), gbc);
+            add(new JLabel("Дата выдачи*:"), gbc);
             gbc.gridx = 1;
-            add(txtDateIssue, gbc);
+            add(dateChooserIssue, gbc);
 
+            // Дата возврата
             row++;
             gbc.gridx = 0; gbc.gridy = row;
-            add(new JLabel("Дата возврата (ГГГГ-ММ-ДД):"), gbc);
+            add(new JLabel("Дата возврата*:"), gbc);
             gbc.gridx = 1;
-            add(txtDateReturn, gbc);
+            add(dateChooserReturn, gbc);
 
+            // Кнопки
             JPanel buttonPanel = new JPanel();
             buttonPanel.add(btnSave);
             buttonPanel.add(btnCancel);
+
+            row++;
+            gbc.gridx = 0; gbc.gridy = row;
+            gbc.gridwidth = 2;
+            gbc.fill = GridBagConstraints.CENTER;
+            gbc.insets = new Insets(15, 5, 5, 5);
+            add(new JLabel("* - обязательные поля"), gbc);
 
             row++;
             gbc.gridx = 0; gbc.gridy = row;
@@ -314,24 +407,65 @@ public class JournalView extends JFrame {
             txtIEmployee.setText(journal.getIEmployee());
             txtOEmployee.setText(journal.getOEmployee());
 
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            txtDateIssue.setText(dateFormat.format(journal.getDateIssue()));
-            txtDateReturn.setText(dateFormat.format(journal.getDateReturn()));
+            // Устанавливаем даты в JDateChooser
+            dateChooserIssue.setDate(journal.getDateIssue());
+            dateChooserReturn.setDate(journal.getDateReturn());
         }
 
         private void save() {
             try {
+                // Проверка числовых полей
+                if (txtDocId.getText().trim().isEmpty() ||
+                        txtNumRecord.getText().trim().isEmpty() ||
+                        txtDepId.getText().trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                            "Пожалуйста, заполните все числовые поля",
+                            "Ошибка", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 int docId = Integer.parseInt(txtDocId.getText().trim());
                 int numRecord = Integer.parseInt(txtNumRecord.getText().trim());
                 int depId = Integer.parseInt(txtDepId.getText().trim());
+
                 String fEmployee = txtFEmployee.getText().trim();
                 String iEmployee = txtIEmployee.getText().trim();
                 String oEmployee = txtOEmployee.getText().trim();
-                java.sql.Date dateIssue = java.sql.Date.valueOf(txtDateIssue.getText().trim());
-                java.sql.Date dateReturn = java.sql.Date.valueOf(txtDateReturn.getText().trim());
 
+                // Проверка полей ФИО
                 if (fEmployee.isEmpty() || iEmployee.isEmpty() || oEmployee.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Все поля ФИО должны быть заполнены",
+                    JOptionPane.showMessageDialog(this,
+                            "Все поля ФИО должны быть заполнены",
+                            "Ошибка", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Проверка формата ФИО (только буквы)
+                if (!fEmployee.matches("[a-zA-Zа-яА-Я\\s\\-]*") ||
+                        !iEmployee.matches("[a-zA-Zа-яА-Я\\s\\-]*") ||
+                        !oEmployee.matches("[a-zA-Zа-яА-Я\\s\\-]*")) {
+                    JOptionPane.showMessageDialog(this,
+                            "Поля ФИО могут содержать только буквы, пробелы и дефисы",
+                            "Ошибка", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Получаем даты из JDateChooser
+                java.sql.Date dateIssue = new java.sql.Date(dateChooserIssue.getDate().getTime());
+                java.sql.Date dateReturn = new java.sql.Date(dateChooserReturn.getDate().getTime());
+
+                // Проверка дат
+                if (dateIssue == null || dateReturn == null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Пожалуйста, выберите обе даты",
+                            "Ошибка", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Проверка, что дата возврата не раньше даты выдачи
+                if (dateReturn.before(dateIssue)) {
+                    JOptionPane.showMessageDialog(this,
+                            "Дата возврата не может быть раньше даты выдачи",
                             "Ошибка", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
@@ -351,13 +485,14 @@ public class JournalView extends JFrame {
                 dispose();
 
             } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "Числовые поля должны содержать числа",
-                        "Ошибка", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException e) {
-                JOptionPane.showMessageDialog(this, "Даты должны быть в формате ГГГГ-ММ-ДД",
+                JOptionPane.showMessageDialog(this,
+                        "Поля ID документа, номер записи и ID отдела должны содержать только числа",
                         "Ошибка", JOptionPane.ERROR_MESSAGE);
             } catch (SQLException e) {
                 JOptionPane.showMessageDialog(this, "Ошибка сохранения: " + e.getMessage(),
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Ошибка: " + e.getMessage(),
                         "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
         }
