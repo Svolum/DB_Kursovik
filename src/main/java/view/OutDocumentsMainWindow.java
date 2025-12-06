@@ -1,28 +1,88 @@
-import view.OutDocumentViev;
-import view.ResultFrame;
+package view;
+
 import controller.DataController;
 import controller.ExcelExporter;
 import model.*;
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.*;
 import java.util.List;
 
-public class ArchiveApp {
-    private OutDocumentViev OutDocumentViev;
+public class OutDocumentsMainWindow extends JFrame {
+    private JButton btnArchiveDocs;
+    private JButton btnDocsOnHands;
+    private JButton btnJournal;
     private DataController dataController;
 
-    public ArchiveApp() {
+    public OutDocumentsMainWindow() {
         dataController = new DataController();
-        OutDocumentViev = new OutDocumentViev();
+        setTitle("Архив документов - Главное меню");
+//        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 300);
+        setLocationRelativeTo(null);
+
+        initComponents();
+        layoutComponents();
         setupListeners();
-        OutDocumentViev.setVisible(true);
+//        setVisible(true);
+    }
+
+    private void initComponents() {
+        btnArchiveDocs = new JButton("Архивные документы");
+        btnDocsOnHands = new JButton("Документы на руках");
+        btnJournal = new JButton("Журнал регистрации");
+
+        // Стилизация кнопок
+        Font buttonFont = new Font("Arial", Font.PLAIN, 16);
+        btnArchiveDocs.setFont(buttonFont);
+        btnDocsOnHands.setFont(buttonFont);
+        btnJournal.setFont(buttonFont);
+
+        // Делаем кнопки больше
+        Dimension buttonSize = new Dimension(250, 50);
+        btnArchiveDocs.setPreferredSize(buttonSize);
+        btnDocsOnHands.setPreferredSize(buttonSize);
+        btnJournal.setPreferredSize(buttonSize);
+    }
+
+    private void layoutComponents() {
+        setLayout(new BorderLayout(10, 10));
+
+        // Заголовок
+        JLabel titleLabel = new JLabel("Система управления архивом документов", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+        add(titleLabel, BorderLayout.NORTH);
+
+        // Основные функции
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.gridx = 0;
+
+        gbc.gridy = 0;
+        centerPanel.add(btnArchiveDocs, gbc);
+
+        gbc.gridy = 1;
+        centerPanel.add(btnDocsOnHands, gbc);
+
+        gbc.gridy = 2;
+        centerPanel.add(btnJournal, gbc);
+
+        add(centerPanel, BorderLayout.CENTER);
+
+        // Нижняя панель с информацией
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+        JLabel infoLabel = new JLabel("Учебный проект - Архив документов");
+        infoLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+        bottomPanel.add(infoLabel);
+        add(bottomPanel, BorderLayout.SOUTH);
     }
 
     private void setupListeners() {
-        OutDocumentViev.getBtnArchiveDocs().addActionListener(e -> showArchiveDocuments());
-        OutDocumentViev.getBtnDocsOnHands().addActionListener(e -> showDocumentsOnHands());
-        OutDocumentViev.getBtnJournal().addActionListener(e -> showJournalRegistration());
+        btnArchiveDocs.addActionListener(e -> showArchiveDocuments());
+        btnDocsOnHands.addActionListener(e -> showDocumentsOnHands());
+        btnJournal.addActionListener(e -> showJournalRegistration());
     }
 
     private void showArchiveDocuments() {
@@ -44,7 +104,7 @@ public class ArchiveApp {
                     "Кол-во страниц"
             };
 
-            ResultFrame frame = new ResultFrame("Архивные документы", columns);
+            OutDocumentResultFrame frame = new OutDocumentResultFrame("Архивные документы", columns);
 
             for (DocumentModel doc : documents) {
                 Object[] row = {
@@ -62,12 +122,7 @@ public class ArchiveApp {
             frame.setRowCount(documents.size());
 
             // Добавляем обработчик для кнопки экспорта
-            frame.getExportButton().addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    exportToExcel(frame);
-                }
-            });
+            frame.getExportButton().addActionListener(e -> exportToExcel(frame));
 
             frame.setVisible(true);
 
@@ -99,7 +154,7 @@ public class ArchiveApp {
                     "Сотрудник"
             };
 
-            ResultFrame frame = new ResultFrame("Документы на руках", columns);
+            OutDocumentResultFrame frame = new OutDocumentResultFrame("Документы на руках", columns);
 
             for (DocumentOnHandsModel doc : documents) {
                 Object[] row = {
@@ -120,12 +175,7 @@ public class ArchiveApp {
             frame.setRowCount(documents.size());
 
             // Добавляем обработчик для кнопки экспорта
-            frame.getExportButton().addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    exportToExcel(frame);
-                }
-            });
+            frame.getExportButton().addActionListener(e -> exportToExcel(frame));
 
             frame.setVisible(true);
 
@@ -155,7 +205,7 @@ public class ArchiveApp {
                     "Дата возврата"
             };
 
-            ResultFrame frame = new ResultFrame("Журнал регистрации выдачи и возврата документов", columns);
+            OutDocumentResultFrame frame = new OutDocumentResultFrame("Журнал регистрации выдачи и возврата документов", columns);
 
             for (JournalModel journal : journals) {
                 Object[] row = {
@@ -174,12 +224,7 @@ public class ArchiveApp {
             frame.setRowCount(journals.size());
 
             // Добавляем обработчик для кнопки экспорта
-            frame.getExportButton().addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    exportToExcel(frame);
-                }
-            });
+            frame.getExportButton().addActionListener(e -> exportToExcel(frame));
 
             frame.setVisible(true);
 
@@ -189,7 +234,7 @@ public class ArchiveApp {
         }
     }
 
-    private void exportToExcel(ResultFrame frame) {
+    private void exportToExcel(OutDocumentResultFrame frame) {
         String title = frame.getFrameTitle();
         String[] headers = frame.getColumnNames();
         List<Object[]> data = frame.getDataForExport();
@@ -202,11 +247,11 @@ public class ArchiveApp {
     }
 
     private void showMessage(String message, String title) {
-        JOptionPane.showMessageDialog(OutDocumentViev, message, title, JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, message, title, JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void showErrorMessage(String message) {
-        JOptionPane.showMessageDialog(OutDocumentViev, message, "Ошибка", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, message, "Ошибка", JOptionPane.ERROR_MESSAGE);
     }
 
     public static void main(String[] args) {
@@ -216,6 +261,6 @@ public class ArchiveApp {
             e.printStackTrace();
         }
 
-        SwingUtilities.invokeLater(() -> new ArchiveApp());
+        SwingUtilities.invokeLater(OutDocumentsMainWindow::new);
     }
 }

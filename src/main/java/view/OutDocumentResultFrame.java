@@ -6,7 +6,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ResultFrame extends JFrame {
+public class OutDocumentResultFrame extends JFrame {
     private JTable table;
     private JScrollPane scrollPane;
     private DefaultTableModel tableModel;
@@ -15,7 +15,7 @@ public class ResultFrame extends JFrame {
     private JButton exportButton;
     private List<Object[]> dataForExport;
 
-    public ResultFrame(String title, String[] columnNames) {
+    public OutDocumentResultFrame(String title, String[] columnNames) {
         setTitle(title);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(900, 600);

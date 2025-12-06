@@ -11,6 +11,7 @@ public class MainFrame extends JFrame {
     private JButton btnDepartments;
     private JButton btnTypes;
     private JButton btnJournal;
+    private JButton btnOutDocuments;
 
     public MainFrame() {
         setTitle("Управление документами");
@@ -29,6 +30,7 @@ public class MainFrame extends JFrame {
         btnDepartments = new JButton("Отделы");
         btnTypes = new JButton("Типы документов");
         btnJournal = new JButton("Журнал выдачи");
+        btnOutDocuments = new JButton("Выходные документы");
 
         // Устанавливаем размер кнопок
         Dimension buttonSize = new Dimension(200, 40);
@@ -37,6 +39,7 @@ public class MainFrame extends JFrame {
         btnDepartments.setPreferredSize(buttonSize);
         btnTypes.setPreferredSize(buttonSize);
         btnJournal.setPreferredSize(buttonSize);
+        btnOutDocuments.setPreferredSize(buttonSize);
     }
 
     private void layoutComponents() {
@@ -53,6 +56,7 @@ public class MainFrame extends JFrame {
         mainPanel.add(btnDepartments, gbc);
         mainPanel.add(btnTypes, gbc);
         mainPanel.add(btnJournal, gbc);
+        mainPanel.add(btnOutDocuments, gbc);
 
         add(mainPanel);
     }
@@ -63,6 +67,7 @@ public class MainFrame extends JFrame {
         btnDepartments.addActionListener(e -> openDepartmentsView());
         btnTypes.addActionListener(e -> openTypesView());
         btnJournal.addActionListener(e -> openJournalView());
+        btnOutDocuments.addActionListener(e -> openOutDocumentView());
     }
 
     private void openDocumentsView() {
@@ -97,6 +102,12 @@ public class MainFrame extends JFrame {
         SwingUtilities.invokeLater(() -> {
             JournalView journalView = new JournalView();
             journalView.setVisible(true);
+        });
+    }
+    private void openOutDocumentView() {
+        SwingUtilities.invokeLater(() -> {
+            OutDocumentsMainWindow outDocumentsMainWindow = new OutDocumentsMainWindow();
+            outDocumentsMainWindow.setVisible(true);
         });
     }
 
