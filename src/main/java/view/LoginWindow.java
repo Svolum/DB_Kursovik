@@ -143,7 +143,9 @@ public class LoginWindow extends JFrame {
                         MainFrame mainFrame = new MainFrame();
                         mainFrame.setVisible(true);
                     }else {
-                        new OutDocumentsMainWindow();
+                        OutDocumentsMainWindow outDocumentsMainWindow = new OutDocumentsMainWindow();
+                        outDocumentsMainWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+                        outDocumentsMainWindow.setVisible(true);
                     }
 
                 } else {
